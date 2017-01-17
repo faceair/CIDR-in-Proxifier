@@ -7,12 +7,12 @@ import CIDR from 'cidr-js';
 let cidr = new CIDR();
 
 const XML_PATH = './ChinaCIDR_forProxifier.xml';
-const COMBINE_LINES = 500;
+const COMBINE_LINES = 1000;
 
 function getChinaIPRange() {
   let stdout = child_process.execSync(`curl 'http://ftp.apnic.net/apnic/stats/apnic/delegated-apnic-latest' | grep ipv4 | grep CN | awk -F\\| '{ printf("%s/%d\\n", $4, 32-log($5)/log(2)) }'`);
   let lines = stdout.toString().split(/\n/);
-  return lines.map(function (line) {
+  return lines.map((line) => {
     if (line.replace(/\s*/,'') !== '') {
       return cidr.range(line).start + '-' + cidr.range(line).end;
     } else {
@@ -23,13 +23,13 @@ function getChinaIPRange() {
 
 function getWhiteList() {
   let stdout = child_process.execSync(`curl 'https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/accelerated-domains.china.conf' | grep server | awk -F/ '{print $2}'`);
-  return stdout.toString().split(/\n/);
+  return stdout.toString().split(/\n/).map((line) => `*.${line}`);
 }
 
 function getGFWList() {
   let stdout = child_process.execSync(`curl 'https://raw.githubusercontent.com/gfwlist/gfwlist/master/gfwlist.txt' | base64 --decode`);
   let lines = stdout.toString().split(/\n/);
-  return lines.map(function (line) {
+  return lines.map((line) => {
     if (line.startsWith('.') && tld.isValid(line.slice(1))) {
       return `*${line}`;
     } else {
